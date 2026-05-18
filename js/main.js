@@ -80,11 +80,8 @@ export default class Main {
             GameGlobal.databus.sequenceStep = 0;
             this.gameInfo.addEffect('奖励100！', '#FFD700');
           }
-        } else if (enemy.seqGroup === 'baobao' && GameGlobal.databus.sequenceStep > 0) {
-          // hitting baobao again restarts the sequence from step 1
-          GameGlobal.databus.sequenceStep = 1;
         }
-        // other wrong characters: keep current sequence progress
+        // wrong or repeated group: sequence progress unchanged
       }
 
       break;

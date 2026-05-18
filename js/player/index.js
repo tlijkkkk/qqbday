@@ -1,145 +1,192 @@
 import Animation from '../base/animation';
 import { SCREEN_WIDTH, SCREEN_HEIGHT } from '../render';
-import Bullet from './bullet';
 
-// 玩家相关常量设置
-const PLAYER_IMG_SRC = 'images/bbfc/piaopiao.jpg';
-const PLAYER_WIDTH = 80;
-const PLAYER_HEIGHT = 80;
-const EXPLO_IMG_PREFIX = 'images/explosion';
-const PLAYER_SHOOT_INTERVAL = 20;
+const BODY_IMG_SRC = 'images/bbfc/xwz.PNG';
+const FACE_IMG_SRC = 'images/bbfc/piaopiao.jpg';
+const CHAR_WIDTH  = 80;
+const CHAR_HEIGHT = 140;
+
+// Shared layout constants (relative to this.y, top of character)
+const FACE_R    = 26;           // face circle radius
+const FACE_CY   = FACE_R;      // face center Y offset from top = 26
+const BODY_W    = 64;
+const BODY_H    = 80;
+const BODY_TOP  = FACE_CY + FACE_R - 8; // body starts slightly overlapping face bottom
+const BODY_CX   = CHAR_WIDTH / 2;
+const LEG_TOP   = BODY_TOP + BODY_H - 10; // legs emerge from body bottom
+const LEG_LEN   = 30;
+const ARM_TOP   = BODY_TOP + 18; // arms from upper body sides
+const ARM_LEN   = 22;
 
 export default class Player extends Animation {
   constructor() {
-    super(PLAYER_IMG_SRC, PLAYER_WIDTH, PLAYER_HEIGHT);
+    super(BODY_IMG_SRC, CHAR_WIDTH, CHAR_HEIGHT);
 
-    // 初始化坐标
+    // Load face image separately
+    this.faceImg = wx.createImage();
+    this.faceImg.src = FACE_IMG_SRC;
+
     this.init();
-
-    // 初始化事件监听
     this.initEvent();
   }
 
   init() {
-    // 玩家默认处于屏幕底部居中位置
-    this.x = SCREEN_WIDTH / 2 - this.width / 2;
-    this.y = SCREEN_HEIGHT - this.height - 30;
-
-    // 用于在手指移动的时候标识手指是否已经在飞机上了
-    this.touched = false;
-
-    this.isActive = true;
-    this.visible = true;
-
-    // 设置爆炸动画
-    this.initExplosionAnimation();
+    this.x = SCREEN_WIDTH / 2 - CHAR_WIDTH / 2;
+    this.y = SCREEN_HEIGHT - CHAR_HEIGHT - 15;
+    this.direction = 'idle';
+    this.moving    = false;
+    this.vx        = 0;
+    this._hasTouch = false;
+    this.isActive  = true;
+    this.visible   = true;
+    this.heartParticles = Array.from({ length: 12 }, (_, i) => ({
+      angle: (i / 12) * Math.PI * 2 + (Math.random() - 0.5) * 0.6,
+      speed: 0.9 + Math.random() * 0.9,
+      size:  0.18 + Math.random() * 0.16,
+    }));
+    this.initHeartAnimation();
   }
 
-  // 预定义爆炸的帧动画
-  initExplosionAnimation() {
-    const EXPLO_FRAME_COUNT = 19;
-    const frames = Array.from(
-      { length: EXPLO_FRAME_COUNT },
-      (_, i) => `${EXPLO_IMG_PREFIX}${i + 1}.png`
-    );
-    this.initFrames(frames);
+  initHeartAnimation() {
+    if (this.imgList && this.imgList.length > 0) return;
+    this.count = 40;
+    this.imgList = new Array(40).fill(null);
+    GameGlobal.databus.animations.push(this);
   }
 
-  /**
-   * 判断手指是否在飞机上
-   * @param {Number} x: 手指的X轴坐标
-   * @param {Number} y: 手指的Y轴坐标
-   * @return {Boolean}: 用于标识手指是否在飞机上的布尔值
-   */
-  checkIsFingerOnAir(x, y) {
-    const deviation = 30;
-    return (
-      x >= this.x - deviation &&
-      y >= this.y - deviation &&
-      x <= this.x + this.width + deviation &&
-      y <= this.y + this.height + deviation
-    );
+  aniRender(ctx) {
+    if (this.index < 0 || this.index >= this.count) return;
+    const progress = this.index / (this.count - 1);
+    const cx = this.x + CHAR_WIDTH / 2;
+    const cy = this.y + CHAR_HEIGHT / 2;
+    const maxDist = CHAR_WIDTH * 2.2;
+
+    ctx.save();
+    ctx.globalAlpha = 1 - progress;
+    ctx.fillStyle = '#FF1493';
+
+    for (const p of this.heartParticles) {
+      const dist = progress * maxDist * p.speed;
+      const hx = cx + Math.cos(p.angle) * dist;
+      const hy = cy + Math.sin(p.angle) * dist + progress * progress * 30;
+      const s  = CHAR_WIDTH * p.size * (0.3 + progress * 0.7);
+
+      ctx.beginPath();
+      ctx.moveTo(hx, hy + s * 0.95);
+      ctx.bezierCurveTo(hx - s * 0.5, hy + s * 0.6, hx - s * 1.25, hy - s * 0.2, hx, hy - s * 0.5);
+      ctx.bezierCurveTo(hx + s * 1.25, hy - s * 0.2, hx + s * 0.5, hy + s * 0.6, hx, hy + s * 0.95);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
-  /**
-   * 根据手指的位置设置飞机的位置
-   * 保证手指处于飞机中间
-   * 同时限定飞机的活动范围限制在屏幕中
-   */
-  setAirPosAcrossFingerPosZ(x, y) {
-    const disX = Math.max(
-      0,
-      Math.min(x - this.width / 2, SCREEN_WIDTH - this.width)
-    );
-    const disY = Math.max(
-      0,
-      Math.min(y - this.height / 2, SCREEN_HEIGHT - this.height)
-    );
-
-    this.x = disX;
-    this.y = disY;
-  }
-
-  /**
-   * 玩家响应手指的触摸事件
-   * 改变战机的位置
-   */
   initEvent() {
-    wx.onTouchStart((e) => {
-      const { clientX: x, clientY: y } = e.touches[0];
-
-      if (GameGlobal.databus.isGameOver) {
-        return;
-      }
-      if (this.checkIsFingerOnAir(x, y)) {
-        this.touched = true;
-        this.setAirPosAcrossFingerPosZ(x, y);
-      }
-    });
-
+    // No onTouchStart — wx.onTouchStart replaces handlers (GameInfo owns it).
+    // Derive everything from onTouchMove using absolute finger position.
     wx.onTouchMove((e) => {
-      const { clientX: x, clientY: y } = e.touches[0];
-
-      if (GameGlobal.databus.isGameOver) {
-        return;
-      }
-      if (this.touched) {
-        this.setAirPosAcrossFingerPosZ(x, y);
-      }
+      if (GameGlobal.databus.isGameOver) return;
+      const fx   = e.touches[0].clientX;
+      const newX = Math.max(0, Math.min(fx - CHAR_WIDTH / 2, SCREEN_WIDTH - CHAR_WIDTH));
+      this.vx        = newX - this.x;  // velocity = actual position change this event
+      this.x         = newX;
+      this._hasTouch = true;
+      this.moving    = Math.abs(this.vx) > 0.3;
+      this.direction = this.vx > 0.3 ? 'right' : this.vx < -0.3 ? 'left' : this.direction;
     });
 
-    wx.onTouchEnd((e) => {
-      this.touched = false;
-    });
-
-    wx.onTouchCancel((e) => {
-      this.touched = false;
-    });
-  }
-
-  /**
-   * 玩家射击操作
-   * 射击时机由外部决定
-   */
-  shoot() {
-    const bullet = GameGlobal.databus.pool.getItemByClass('bullet', Bullet);
-    bullet.init(this.x + this.width / 2 - bullet.width / 2, this.y - 10, 10);
-    GameGlobal.databus.bullets.push(bullet);
-    GameGlobal.musicManager.playShoot(); // 播放射击音效
+    wx.onTouchEnd(()    => { this._hasTouch = false; });
+    wx.onTouchCancel(() => { this._hasTouch = false; });
   }
 
   update() {
-    if (GameGlobal.databus.isGameOver) {
-      return;
+    if (GameGlobal.databus.isGameOver) return;
+
+    // Finger lifted — coast with momentum then friction to a stop
+    if (!this._hasTouch) {
+      if (Math.abs(this.vx) > 0.15) {
+        this.x  = Math.max(0, Math.min(this.x + this.vx, SCREEN_WIDTH - CHAR_WIDTH));
+        this.vx *= 0.88;
+        this.moving    = Math.abs(this.vx) > 0.3;
+        this.direction = this.vx > 0 ? 'right' : 'left';
+      } else {
+        this.vx    = 0;
+        this.moving = false;
+      }
     }
+  }
+
+  render(ctx) {
+    if (!this.visible) return;
+
+    const left  = this.x;
+    const top   = this.y;
+    const cx    = left + BODY_CX;
+    const frame = GameGlobal.databus.frame;
+
+    // Swing values — legs opposite each other, arms opposite same-side leg
+    const swing    = this.moving ? Math.sin(frame * 0.38) * 13 : 0;
+    const lLeg     = this.direction === 'right' ? -swing :  swing;
+    const rLeg     = this.direction === 'right' ?  swing : -swing;
+    const lArm     = -lLeg * 0.7;
+    const rArm     = -rLeg * 0.7;
+
+    // 1. Legs (drawn first so body image covers their tops)
+    ctx.save();
+    ctx.strokeStyle = '#C68642';
+    ctx.lineCap     = 'round';
+    ctx.lineWidth   = 8;
+    ctx.beginPath();
+    ctx.moveTo(cx - 10, top + LEG_TOP);
+    ctx.lineTo(cx - 10 + lLeg, top + LEG_TOP + LEG_LEN);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + 10, top + LEG_TOP);
+    ctx.lineTo(cx + 10 + rLeg, top + LEG_TOP + LEG_LEN);
+    ctx.stroke();
+    ctx.restore();
+
+    // 2. Body image (xwz.PNG) — drawn centred, covers leg tops
+    ctx.drawImage(
+      this.img,
+      cx - BODY_W / 2,
+      top + BODY_TOP,
+      BODY_W,
+      BODY_H
+    );
+
+    // 3. Arms (over body image so they look attached)
+    ctx.save();
+    ctx.strokeStyle = '#C68642';
+    ctx.lineCap     = 'round';
+    ctx.lineWidth   = 6;
+    ctx.beginPath();
+    ctx.moveTo(cx - BODY_W / 2 + 4, top + ARM_TOP);
+    ctx.lineTo(cx - BODY_W / 2 + 4 + lArm - 6, top + ARM_TOP + ARM_LEN);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + BODY_W / 2 - 4, top + ARM_TOP);
+    ctx.lineTo(cx + BODY_W / 2 - 4 + rArm + 6, top + ARM_TOP + ARM_LEN);
+    ctx.stroke();
+    ctx.restore();
+
+    // 4. Face circle — piaopiao.jpg clipped to circle at head position
+    const faceCX = cx;
+    const faceCY = top + FACE_CY;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(faceCX, faceCY, FACE_R, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(this.faceImg, faceCX - FACE_R, faceCY - FACE_R, FACE_R * 2, FACE_R * 2);
+    ctx.restore();
+
   }
 
   destroy() {
     this.isActive = false;
     this.playAnimation();
-    GameGlobal.musicManager.playExplosion(); // 播放爆炸音效
-    wx.vibrateShort({
-      type: 'medium'
-    }); // 震动
+    GameGlobal.musicManager.playExplosion();
+    wx.vibrateShort({ type: 'medium' });
   }
 }
