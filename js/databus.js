@@ -8,13 +8,15 @@ let instance;
  */
 export default class DataBus {
   // 直接在类中定义实例属性
-  enemys = []; // 存储敌人
-  bullets = []; // 存储子弹
-  animations = []; // 存储动画
-  frame = 0; // 当前帧数
-  score = 0; // 当前分数
-  isGameOver = false; // 游戏是否结束
-  pool = new Pool(); // 初始化对象池
+  enemys = [];
+  bullets = [];
+  animations = [];
+  frame = 0;
+  score = 0;
+  isGameOver = false;
+  sequenceStep = 0; // 当前连击序列进度 (0-3)
+  rkuHitCount = 0;  // 击中rku次数
+  pool = new Pool();
 
   constructor() {
     // 确保单例模式
@@ -25,12 +27,14 @@ export default class DataBus {
 
   // 重置游戏状态
   reset() {
-    this.frame = 0; // 当前帧数
-    this.score = 0; // 当前分数
-    this.bullets = []; // 存储子弹
-    this.enemys = []; // 存储敌人
-    this.animations = []; // 存储动画
-    this.isGameOver = false; // 游戏是否结束
+    this.frame = 0;
+    this.score = 0;
+    this.bullets = [];
+    this.enemys = [];
+    this.animations = [];
+    this.isGameOver = false;
+    this.sequenceStep = 0;
+    this.rkuHitCount = 0;
   }
 
   // 游戏结束
@@ -44,10 +48,10 @@ export default class DataBus {
    * @param {Object} enemy - 要回收的敌人对象
    */
   removeEnemy(enemy) {
-    const temp = this.enemys.splice(this.enemys.indexOf(enemy), 1);
-    if (temp) {
-      this.pool.recover('enemy', enemy); // 回收敌人到对象池
-    }
+    const idx = this.enemys.indexOf(enemy);
+    if (idx === -1) return;
+    this.enemys.splice(idx, 1);
+    this.pool.recover('enemy', enemy);
   }
 
   /**

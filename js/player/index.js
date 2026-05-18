@@ -3,7 +3,7 @@ import { SCREEN_WIDTH, SCREEN_HEIGHT } from '../render';
 import Bullet from './bullet';
 
 // 玩家相关常量设置
-const PLAYER_IMG_SRC = 'images/hero.png';
+const PLAYER_IMG_SRC = 'images/bbfc/piaopiao.jpg';
 const PLAYER_WIDTH = 80;
 const PLAYER_HEIGHT = 80;
 const EXPLO_IMG_PREFIX = 'images/explosion';

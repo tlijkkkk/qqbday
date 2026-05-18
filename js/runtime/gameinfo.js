@@ -15,8 +15,19 @@ export default class GameInfo extends Emitter {
       endY: SCREEN_HEIGHT / 2 - 100 + 255,
     };
 
-    // 绑定触摸事件
+    this.effects = []; // 浮动文字特效列表
+
     wx.onTouchStart(this.touchEventHandler.bind(this))
+  }
+
+  addEffect(text, color = '#FFD700') {
+    this.effects.push({
+      text,
+      color,
+      x: SCREEN_WIDTH / 2,
+      y: SCREEN_HEIGHT / 2,
+      alpha: 1.0,
+    });
   }
 
   setFont(ctx) {
@@ -25,17 +36,36 @@ export default class GameInfo extends Emitter {
   }
 
   render(ctx) {
-    this.renderGameScore(ctx, GameGlobal.databus.score); // 绘制当前分数
+    this.renderGameScore(ctx, GameGlobal.databus.score);
 
-    // 游戏结束时停止帧循环并显示游戏结束画面
     if (GameGlobal.databus.isGameOver) {
-      this.renderGameOver(ctx, GameGlobal.databus.score); // 绘制游戏结束画面
+      this.renderGameOver(ctx, GameGlobal.databus.score);
     }
+
+    this.renderEffects(ctx);
+  }
+
+  renderEffects(ctx) {
+    this.effects = this.effects.filter(e => e.alpha > 0);
+    this.effects.forEach((e) => {
+      ctx.save();
+      ctx.globalAlpha = e.alpha;
+      ctx.fillStyle = e.color;
+      ctx.font = 'bold 28px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(e.text, e.x, e.y);
+      ctx.restore();
+      e.y -= 2;
+      e.alpha -= 0.02;
+    });
   }
 
   renderGameScore(ctx, score) {
+    ctx.save();
     this.setFont(ctx);
+    ctx.textAlign = 'left';
     ctx.fillText(score, 10, 30);
+    ctx.restore();
   }
 
   renderGameOver(ctx, score) {

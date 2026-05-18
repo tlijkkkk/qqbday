@@ -1,23 +1,29 @@
 import Animation from '../base/animation';
 import { SCREEN_WIDTH, SCREEN_HEIGHT } from '../render';
 
-const ENEMY_IMG_SRC = 'images/enemy.png';
-const ENEMY_WIDTH = 60;
-const ENEMY_HEIGHT = 60;
+const ENEMY_WIDTH = 80;
+const ENEMY_HEIGHT = 80;
 const EXPLO_IMG_PREFIX = 'images/explosion';
 
 const ENEMY_TYPES = [
-  { color: '#FF3333', scoreValue: -10, isDeadly: false }, // red
-  { color: '#33CC33', scoreValue: 10,  isDeadly: false }, // green
-  { color: '#FFCC00', scoreValue: 20,  isDeadly: false }, // yellow
-  { color: '#111111', scoreValue: 0,   isDeadly: true  }, // black
+  { name: 'baobao',  imgSrc: 'images/bbfc/baobao.png',  score: 5,   isRku: false, seqGroup: 'baobao' },
+  { name: 'baobao2', imgSrc: 'images/bbfc/baobao2.png', score: 10,  isRku: false, seqGroup: 'baobao' },
+  { name: 'fafa',    imgSrc: 'images/bbfc/fafa.png',    score: 5,   isRku: false, seqGroup: 'fafa'   },
+  { name: 'fafa2',   imgSrc: 'images/bbfc/fafa2.png',   score: 10,  isRku: false, seqGroup: 'fafa'   },
+  { name: 'beibei',  imgSrc: 'images/bbfc/beibei.png',  score: 5,   isRku: false, seqGroup: 'beibei' },
+  { name: 'beibei2', imgSrc: 'images/bbfc/beibei2.jpg', score: 10,  isRku: false, seqGroup: 'beibei' },
+  { name: 'caicai',  imgSrc: 'images/bbfc/caicai.png',  score: 5,   isRku: false, seqGroup: 'caicai' },
+  { name: 'caicai2', imgSrc: 'images/bbfc/caicai2.png', score: 10,  isRku: false, seqGroup: 'caicai' },
+  { name: 'rku',     imgSrc: 'images/bbfc/rku.JPG',     score: -50, isRku: true,  seqGroup: null     },
 ];
 
+export const SEQUENCE = ['baobao', 'beibei', 'fafa', 'caicai'];
+
 export default class Enemy extends Animation {
-  speed = Math.random() * 6 + 3; // 飞行速度
+  speed = Math.random() * 6 + 3;
 
   constructor() {
-    super(ENEMY_IMG_SRC, ENEMY_WIDTH, ENEMY_HEIGHT);
+    super(ENEMY_TYPES[0].imgSrc, ENEMY_WIDTH, ENEMY_HEIGHT);
   }
 
   init() {
@@ -25,37 +31,14 @@ export default class Enemy extends Animation {
     this.y = -this.height;
 
     const type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
-    this.color = type.color;
-    this.scoreValue = type.scoreValue;
-    this.isDeadly = type.isDeadly;
+    this.img.src = type.imgSrc;
+    this.scoreValue = type.score;
+    this.isRku = type.isRku;
+    this.seqGroup = type.seqGroup;
 
     this.isActive = true;
     this.visible = true;
-    // 设置爆炸动画
     this.initExplosionAnimation();
-  }
-
-  render(ctx) {
-    if (!this.visible) return;
-
-    const x = this.x;
-    const y = this.y;
-    const w = this.width;
-    const h = this.height;
-    const cx = x + w / 2;
-
-    ctx.save();
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.moveTo(cx, y + h);              // 机头（朝下）
-    ctx.lineTo(x, y + h * 0.45);       // 左翼尖
-    ctx.lineTo(x + w * 0.3, y + h * 0.55);
-    ctx.lineTo(cx, y);                  // 机尾
-    ctx.lineTo(x + w * 0.7, y + h * 0.55);
-    ctx.lineTo(x + w, y + h * 0.45);   // 右翼尖
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
   }
 
   // 生成随机 X 坐标
@@ -65,6 +48,7 @@ export default class Enemy extends Animation {
 
   // 预定义爆炸的帧动画
   initExplosionAnimation() {
+    if (this.imgList && this.imgList.length > 0) return; // pool reuse guard
     const EXPLO_FRAME_COUNT = 19;
     const frames = Array.from(
       { length: EXPLO_FRAME_COUNT },
@@ -75,7 +59,7 @@ export default class Enemy extends Animation {
 
   // 每一帧更新敌人位置
   update() {
-    if (GameGlobal.databus.isGameOver) {
+    if (GameGlobal.databus.isGameOver || !this.isActive) {
       return;
     }
 
@@ -95,7 +79,7 @@ export default class Enemy extends Animation {
     wx.vibrateShort({
       type: 'light'
     }); // 轻微震动
-    this.on('stopAnimation', () => this.remove.bind(this));
+    this.on('stopAnimation', this.remove.bind(this));
   }
 
   remove() {

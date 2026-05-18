@@ -1,6 +1,6 @@
 import './render'; // 初始化Canvas
 import Player from './player/index'; // 导入玩家类
-import Enemy from './npc/enemy'; // 导入敌机类
+import Enemy, { SEQUENCE } from './npc/enemy'; // 导入敌机类
 import BackGround from './runtime/background'; // 导入背景类
 import GameInfo from './runtime/gameinfo'; // 导入游戏UI类
 import Music from './runtime/music'; // 导入音乐类
@@ -59,18 +59,35 @@ export default class Main {
     for (let i = 0, il = GameGlobal.databus.enemys.length; i < il; i++) {
       const enemy = GameGlobal.databus.enemys[i];
 
-      if (this.player.isCollideWith(enemy)) {
-        enemy.destroy();
+      if (!this.player.isCollideWith(enemy)) continue;
 
-        if (enemy.isDeadly) {
+      enemy.destroy();
+
+      if (enemy.isRku) {
+        GameGlobal.databus.rkuHitCount++;
+        GameGlobal.databus.sequenceStep = 0;
+        this.gameInfo.addEffect('WooWoo罚50!!!', '#FF4444');
+        if (GameGlobal.databus.rkuHitCount >= 3) {
           this.player.destroy();
           GameGlobal.databus.gameOver();
-        } else {
-          GameGlobal.databus.score += enemy.scoreValue;
         }
-
-        break;
+      } else {
+        const expected = SEQUENCE[GameGlobal.databus.sequenceStep];
+        if (enemy.seqGroup === expected) {
+          GameGlobal.databus.sequenceStep++;
+          if (GameGlobal.databus.sequenceStep >= SEQUENCE.length) {
+            GameGlobal.databus.score += 100;
+            GameGlobal.databus.sequenceStep = 0;
+            this.gameInfo.addEffect('奖励100！', '#FFD700');
+          }
+        } else if (enemy.seqGroup === 'baobao' && GameGlobal.databus.sequenceStep > 0) {
+          // hitting baobao again restarts the sequence from step 1
+          GameGlobal.databus.sequenceStep = 1;
+        }
+        // other wrong characters: keep current sequence progress
       }
+
+      break;
     }
   }
 
