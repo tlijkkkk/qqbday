@@ -6,7 +6,9 @@ import GameInfo from './runtime/gameinfo'; // 导入游戏UI类
 import Music from './runtime/music'; // 导入音乐类
 import DataBus from './databus'; // 导入数据类，用于管理游戏状态和数据
 
-const ENEMY_GENERATE_INTERVAL = 30;
+const ENEMY_GENERATE_INTERVAL_START = 30; // frames between spawns at game start
+const ENEMY_GENERATE_INTERVAL_END   = 15; // frames between spawns at ~60 s
+const GAME_DURATION_FRAMES = 3600;        // 60 s × 60 fps
 const ctx = canvas.getContext('2d'); // 获取canvas的2D绘图上下文;
 
 GameGlobal.databus = new DataBus(); // 全局数据管理，用于管理游戏状态和数据
@@ -22,11 +24,11 @@ export default class Main {
   gameInfo = new GameInfo(); // 创建游戏UI显示
 
   constructor() {
-    // 当开始游戏被点击时，重新开始游戏
+    this.gameInfo.on('startGame', this.start.bind(this));
     this.gameInfo.on('restart', this.start.bind(this));
 
-    // 开始游戏
-    this.start();
+    // Run the render loop immediately so the tutorial screen is visible
+    this.aniId = requestAnimationFrame(this.loop.bind(this));
   }
 
   /**
@@ -44,11 +46,16 @@ export default class Main {
    * 帧数取模定义成生成的频率
    */
   enemyGenerate() {
-    // 每30帧生成一个敌机
-    if (GameGlobal.databus.frame % ENEMY_GENERATE_INTERVAL === 0) {
-      const enemy = GameGlobal.databus.pool.getItemByClass('enemy', Enemy); // 从对象池获取敌机实例
-      enemy.init(); // 初始化敌机
-      GameGlobal.databus.enemys.push(enemy); // 将敌机添加到敌机数组中
+    const frame    = GameGlobal.databus.frame;
+    const progress = Math.min(frame / GAME_DURATION_FRAMES, 1);
+    const interval = Math.round(
+      ENEMY_GENERATE_INTERVAL_START -
+      (ENEMY_GENERATE_INTERVAL_START - ENEMY_GENERATE_INTERVAL_END) * progress
+    );
+    if (frame % interval === 0) {
+      const enemy = GameGlobal.databus.pool.getItemByClass('enemy', Enemy);
+      enemy.init(progress);
+      GameGlobal.databus.enemys.push(enemy);
     }
   }
 
@@ -109,6 +116,8 @@ export default class Main {
 
   // 游戏逻辑更新主函数
   update() {
+    if (this.gameInfo.showTutorial) return;
+
     GameGlobal.databus.frame++; // 增加帧数
 
     if (GameGlobal.databus.isGameOver) {

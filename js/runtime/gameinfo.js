@@ -15,7 +15,8 @@ export default class GameInfo extends Emitter {
       endY: SCREEN_HEIGHT / 2 - 100 + 255,
     };
 
-    this.effects = []; // 浮动文字特效列表
+    this.effects = [];
+    this.showTutorial = true;
 
     wx.onTouchStart(this.touchEventHandler.bind(this))
   }
@@ -30,12 +31,18 @@ export default class GameInfo extends Emitter {
     });
   }
 
+
   setFont(ctx) {
     ctx.fillStyle = '#ffffff';
     ctx.font = '20px Arial';
   }
 
   render(ctx) {
+    if (this.showTutorial) {
+      this.renderTutorial(ctx);
+      return;
+    }
+
     this.renderGameScore(ctx, GameGlobal.databus.score);
 
     if (GameGlobal.databus.isGameOver) {
@@ -43,6 +50,91 @@ export default class GameInfo extends Emitter {
     }
 
     this.renderEffects(ctx);
+  }
+
+  renderTutorial(ctx) {
+    const cx = SCREEN_WIDTH / 2;
+
+    ctx.save();
+
+    // Dimmed background panel
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
+    const panelW = SCREEN_WIDTH - 40;
+    const panelH = SCREEN_HEIGHT * 0.72;
+    const panelX = 20;
+    const panelY = SCREEN_HEIGHT * 0.1;
+    const r = 16;
+    ctx.beginPath();
+    ctx.moveTo(panelX + r, panelY);
+    ctx.arcTo(panelX + panelW, panelY,     panelX + panelW, panelY + panelH, r);
+    ctx.arcTo(panelX + panelW, panelY + panelH, panelX,     panelY + panelH, r);
+    ctx.arcTo(panelX,          panelY + panelH, panelX,     panelY,          r);
+    ctx.arcTo(panelX,          panelY,          panelX + panelW, panelY,     r);
+    ctx.closePath();
+    ctx.fill();
+
+    let y = panelY + 44;
+
+    // Title
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 26px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('💕 游戏玩法 💕', cx, y);
+    y += 44;
+
+    // Divider
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(panelX + 20, y - 10);
+    ctx.lineTo(panelX + panelW - 20, y - 10);
+    ctx.stroke();
+
+    // Rules
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '17px Arial';
+    ctx.textAlign = 'left';
+    const left = panelX + 20;
+    const lines = [
+      ['🕹️ 操作方式', true],
+      ['左右滑动屏幕移动角色', false],
+      ['', false],
+      ['🎯 得分规则', true],
+      ['按顺序碰触角色完成一组序列', false],
+      ['可获得奖励 +100 分！', false],
+      ['', false],
+      ['📋 序列顺序', true],
+      ['宝宝 → 贝贝 → 发发 → 财财', false],
+      ['（每种碰任意一个即可）', false],
+      ['', false],
+      ['⚠️ 危险角色', true],
+      ['碰到 RKU 扣 50 分', false],
+      ['碰到 RKU 三次游戏结束！', false],
+      ['', false],
+      ['🎁 隐藏奖励', true],
+      ['突破500分有大奖！', false],
+    ];
+
+    for (const [text, isHeader] of lines) {
+      if (isHeader) {
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 17px Arial';
+      } else {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '17px Arial';
+      }
+      ctx.fillText(text, left, y);
+      y += text === '' ? 8 : 28;
+    }
+
+    // Tap to start
+    y = panelY + panelH - 30;
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 18px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('点击任意位置开始游戏', cx, y);
+
+    ctx.restore();
   }
 
   renderEffects(ctx) {
@@ -122,18 +214,21 @@ export default class GameInfo extends Emitter {
   }
 
   touchEventHandler(event) {
-    const { clientX, clientY } = event.touches[0]; // 获取触摸点的坐标
+    const { clientX, clientY } = event.touches[0];
 
-    // 当前只有游戏结束时展示了UI，所以只处理游戏结束时的状态
+    if (this.showTutorial) {
+      this.showTutorial = false;
+      this.emit('startGame');
+      return;
+    }
+
     if (GameGlobal.databus.isGameOver) {
-      // 检查触摸是否在按钮区域内
       if (
         clientX >= this.btnArea.startX &&
         clientX <= this.btnArea.endX &&
         clientY >= this.btnArea.startY &&
         clientY <= this.btnArea.endY
       ) {
-        // 调用重启游戏的回调函数
         this.emit('restart');
       }
     }

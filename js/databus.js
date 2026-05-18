@@ -14,8 +14,8 @@ export default class DataBus {
   frame = 0;
   score = 0;
   isGameOver = false;
-  sequenceStep = 0; // 当前连击序列进度 (0-3)
-  rkuHitCount = 0;  // 击中rku次数
+  sequenceStep = 0;
+  rkuHitCount = 0;
   pool = new Pool();
 
   constructor() {

@@ -25,11 +25,17 @@ export default class Enemy extends Animation {
     super(ENEMY_TYPES[0].imgSrc, ENEMY_WIDTH, ENEMY_HEIGHT);
   }
 
-  init() {
+  init(progress = 0) {
     this.x = this.getRandomX();
     this.y = -this.height;
 
-    const type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
+    // RKU probability rises from 7% at start to 70% at 60 s
+    const rkuProb  = Math.min(0.07 + progress * 0.63, 0.70);
+    const isRkuRoll = Math.random() < rkuProb;
+    const pool     = isRkuRoll
+      ? ENEMY_TYPES.filter(t => t.isRku)
+      : ENEMY_TYPES.filter(t => !t.isRku);
+    const type = pool[Math.floor(Math.random() * pool.length)];
     this.img.src = type.imgSrc;
     this.scoreValue = type.score;
     this.isRku = type.isRku;
