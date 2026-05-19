@@ -5,15 +5,15 @@ const ENEMY_WIDTH = 80;
 const ENEMY_HEIGHT = 80;
 
 const ENEMY_TYPES = [
-  { name: 'baobao',  imgSrc: 'images/bbfc/baobao.png',  score: 5,   isRku: false, seqGroup: 'baobao' },
-  { name: 'baobao2', imgSrc: 'images/bbfc/baobao2.png', score: 10,  isRku: false, seqGroup: 'baobao' },
-  { name: 'fafa',    imgSrc: 'images/bbfc/fafa.png',    score: 5,   isRku: false, seqGroup: 'fafa'   },
-  { name: 'fafa2',   imgSrc: 'images/bbfc/fafa2.png',   score: 10,  isRku: false, seqGroup: 'fafa'   },
-  { name: 'beibei',  imgSrc: 'images/bbfc/beibei.png',  score: 5,   isRku: false, seqGroup: 'beibei' },
+  { name: 'baobao',  imgSrc: 'images/bbfc/baobao.jpg',  score: 5,   isRku: false, seqGroup: 'baobao' },
+  { name: 'baobao2', imgSrc: 'images/bbfc/baobao2.jpg', score: 10,  isRku: false, seqGroup: 'baobao' },
+  { name: 'fafa',    imgSrc: 'images/bbfc/fafa.jpg',    score: 5,   isRku: false, seqGroup: 'fafa'   },
+  { name: 'fafa2',   imgSrc: 'images/bbfc/fafa2.jpg',   score: 10,  isRku: false, seqGroup: 'fafa'   },
+  { name: 'beibei',  imgSrc: 'images/bbfc/beibei.jpg',  score: 5,   isRku: false, seqGroup: 'beibei' },
   { name: 'beibei2', imgSrc: 'images/bbfc/beibei2.jpg', score: 10,  isRku: false, seqGroup: 'beibei' },
-  { name: 'caicai',  imgSrc: 'images/bbfc/caicai.png',  score: 5,   isRku: false, seqGroup: 'caicai' },
-  { name: 'caicai2', imgSrc: 'images/bbfc/caicai2.png', score: 10,  isRku: false, seqGroup: 'caicai' },
-  { name: 'rku',     imgSrc: 'images/bbfc/rku.JPG',     score: -50, isRku: true,  seqGroup: null     },
+  { name: 'caicai',  imgSrc: 'images/bbfc/caicai.jpg',  score: 5,   isRku: false, seqGroup: 'caicai' },
+  { name: 'caicai2', imgSrc: 'images/bbfc/caicai2.jpg', score: 10,  isRku: false, seqGroup: 'caicai' },
+  { name: 'rku',     imgSrc: 'images/bbfc/rku.jpg',     score: -50, isRku: true,  seqGroup: null     },
 ];
 
 export const SEQUENCE = ['baobao', 'beibei', 'fafa', 'caicai'];

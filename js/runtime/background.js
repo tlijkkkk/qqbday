@@ -1,9 +1,9 @@
 import Sprite from '../base/sprite';
 import { SCREEN_WIDTH, SCREEN_HEIGHT } from '../render';
 
-const BACKGROUND_IMAGE_SRC = 'images/bp4.png';
-const BACKGROUND_WIDTH = 1024;
-const BACKGROUND_HEIGHT = 1024;
+const BACKGROUND_IMAGE_SRC = 'images/bp4.jpg';
+const BACKGROUND_WIDTH = 716;
+const BACKGROUND_HEIGHT = 716;
 
 export default class BackGround extends Sprite {
   constructor() {

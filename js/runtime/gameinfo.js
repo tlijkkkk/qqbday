@@ -79,7 +79,7 @@ export default class GameInfo extends Emitter {
     ctx.fillStyle = '#FFD700';
     ctx.font = 'bold 26px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('💕 游戏玩法 💕', cx, y);
+    ctx.fillText('*** 游戏玩法 ***', cx, y);
     y += 44;
 
     // Divider
@@ -96,22 +96,22 @@ export default class GameInfo extends Emitter {
     ctx.textAlign = 'left';
     const left = panelX + 20;
     const lines = [
-      ['🕹️ 操作方式', true],
+      ['【操作方式】', true],
       ['左右滑动屏幕移动角色', false],
       ['', false],
-      ['🎯 得分规则', true],
+      ['【得分规则】', true],
       ['按顺序碰触角色完成一组序列', false],
       ['可获得奖励 +100 分！', false],
       ['', false],
-      ['📋 序列顺序', true],
-      ['宝宝 → 贝贝 → 发发 → 财财', false],
-      ['（每种碰任意一个即可）', false],
+      ['【序列顺序】', true],
+      ['宝宝 -> 贝贝 -> 发发 -> 财财', false],
+      ['每种碰任意一个即可', false],
       ['', false],
-      ['⚠️ 危险角色', true],
+      ['【危险角色】', true],
       ['碰到 RKU 扣 50 分', false],
       ['碰到 RKU 三次游戏结束！', false],
       ['', false],
-      ['🎁 隐藏奖励', true],
+      ['【隐藏奖励】', true],
       ['突破500分有大奖！', false],
     ];
 

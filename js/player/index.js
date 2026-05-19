@@ -1,7 +1,7 @@
 import Animation from '../base/animation';
 import { SCREEN_WIDTH, SCREEN_HEIGHT } from '../render';
 
-const BODY_IMG_SRC = 'images/bbfc/xwz.PNG';
+const BODY_IMG_SRC = 'images/bbfc/xwz.jpg';
 const FACE_IMG_SRC = 'images/bbfc/piaopiao.jpg';
 const CHAR_WIDTH  = 80;
 const CHAR_HEIGHT = 140;
