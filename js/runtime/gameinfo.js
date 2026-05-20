@@ -112,7 +112,7 @@ export default class GameInfo extends Emitter {
       ['碰到 RKU 三次游戏结束！', false],
       ['', false],
       ['【隐藏奖励】', true],
-      ['突破500分有大奖！', false],
+      ['突破300分有大奖！！！', false],
     ];
 
     for (const [text, isHeader] of lines) {

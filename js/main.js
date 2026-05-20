@@ -37,6 +37,7 @@ export default class Main {
   start() {
     GameGlobal.databus.reset(); // 重置数据
     this.player.init(); // 重置玩家状态
+    GameGlobal.musicManager.playBGM();
     cancelAnimationFrame(this.aniId); // 清除上一局的动画
     this.aniId = requestAnimationFrame(this.loop.bind(this)); // 开始新的动画循环
   }
